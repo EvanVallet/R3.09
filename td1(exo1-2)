@@ -21,7 +21,8 @@ divEntier(25,10)
 def ouverture(fichier):
     try:
         fich = open(fichier,'r')
-        print(fich)
+        lect = fich.read()
+        print(lect)
     except FileNotFoundError:
         print ("le fichier ",fichier," n'existe pas")
 
