@@ -1,9 +1,4 @@
-import socket
-
-
-flag = False
-host = "127.0.0.1"
-port = 11112
+port = 11111
 client_socket = socket.socket()
 client_socket.connect((host, port))
 
