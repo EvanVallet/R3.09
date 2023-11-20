@@ -1,19 +1,17 @@
 import socket
 import threading
 
-flag = False
+boucle = False
 port = 11111
 server_socket = socket.socket()
 server_socket.bind(('0.0.0.0', port))
 server_socket.listen(1)
 
-class ArretError(Exception):
-    pass
 
 
 def reception():
     flag = False
-    global conn , server_socket , ArretError
+    global conn , server_socket, boucle
     while not flag:
         print(1)
         try:
@@ -32,6 +30,7 @@ def reception():
                  conn.send(reply.encode())
                  flag = True
                  server_socket.close()
+                 boucle=True
             else :
                 reply="message pris en compte sont :\n         bye = deconexion \n         arret = arret"
                 conn.send(reply.encode())
@@ -42,7 +41,7 @@ retour = threading.Thread(target=reception)
 start= False
 try:
     conn, address = server_socket.accept()
-    while not flag:
+    while not boucle:
         if start == False :
             print("start")
             retour.start()
@@ -51,9 +50,12 @@ try:
         conn.send(message.encode())
 except ConnectionAbortedError:
     print("arret du server")
-    flag = True
 
+except KeyboardInterrupt:
+    print("arret du server")
 
+except OSError:
+    print("pas de client")
 
 
 server_socket.close()
