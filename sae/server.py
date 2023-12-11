@@ -27,6 +27,7 @@ except Error as e:
 
 
 def authenticate(username, password):
+    global username_store
     # Check the credentials against the database
     cursor = db_connection.cursor()
 
@@ -36,6 +37,7 @@ def authenticate(username, password):
         result = cursor.fetchone()
 
         if result:
+            username_store = username
             return "success"
         else:
             return "failure"
@@ -83,23 +85,15 @@ def reception(conn):
             message = conn.recv(1024).decode()
             print(f"Received message from client {conn}: {message}")
 
-            if message == "stop":
-                reply = "stop"
+            if message == "server/stop":
+                reply = "server/stop"
                 conn.send(reply.encode())
                 break  # Break the loop to close the current client connection
 
-            elif message == "arret":
-                reply = "stop"
-                with clients_lock:
-                    for client_socket in clients:
-                        if client_socket != conn:  # Check if the client is still in the list
-                            client_socket.send(reply.encode())
-                boucle = True  # Set loop flag to terminate the main loop
-
             elif message.startswith("login"):
-                # Process login request
                 username, password = message.split(" ", 2)[1:]
                 reply = authenticate(username, password)
+                print(reply)
                 conn.send(reply.encode())
 
             elif message.startswith("register"):
@@ -108,15 +102,26 @@ def reception(conn):
                 reply = register(username, password)
                 conn.send(reply.encode())
 
+            elif message.startswith("droit"):
+                print(message)
+                retour = str(input("autorise yes/no"))
+                if retour == "yes":
+                    conn.send("success".encode())
+
             else:
                 # Send the message to all connected clients and store it in the database
                 with clients_lock:
                     for client_socket in clients:
                         if client_socket != conn:  # Check if the client is still in the list
-                            client_socket.send(message.encode())
-
+                            try:
+                                client_socket.send(message.encode())
+                                print("envoi")
+                            except BrokenPipeError:
+                                print("BrokenPipeError: Unable to send message to a client.")
+                                # Handle BrokenPipeError (client disconnected)
+                                # Optionally, you may remove the disconnected client from the list
                 # Store the message in the database
-                store_message(username, message)
+                store_message(username_store, message)
 
     except ConnectionResetError:
         print(f"Client {conn} disconnected")
